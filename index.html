@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#21295C">
+<title>MINIT Recorder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#F3F6FA;--card:#fff;--ink:#1B2250;--muted:#5A6586;--line:#D9E1EB;--brand:#065A82;--navy:#21295C;--rec:#C0392B;--ok:#1F7A4D;--bad:#B3402F;--gold:#F2B705}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1430;--card:#161E44;--ink:#E8ECF8;--muted:#9AA6C8;--line:#2A3566;--brand:#5BB4DE;--rec:#F0735F;--ok:#5CC28B;--bad:#F08A78;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Prompt',Tahoma,sans-serif;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{max-width:640px;margin:0 auto;display:grid;gap:14px}
+h1{font-size:20px;margin:4px 0 0;letter-spacing:.12em;color:var(--brand)}
+h2{font-size:15px;margin:0;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
+label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+input{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px;min-width:0}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;min-height:40px}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:500}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+details summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{font-size:13px;color:var(--muted);margin:0}
+.msg{font-size:13px;min-height:1.4em}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+#rec{width:112px;height:112px;border-radius:50%;border:0;background:var(--rec);color:#fff;font-size:16px;font-weight:600;justify-self:center;box-shadow:0 0 0 6px color-mix(in srgb,var(--rec) 22%,transparent)}
+#rec.on{background:var(--navy);box-shadow:0 0 0 6px color-mix(in srgb,var(--rec) 45%,transparent)}
+#timer{text-align:center;font-size:30px;font-variant-numeric:tabular-nums;font-weight:500}
+.meter{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .1s}
+#stats{text-align:center;font-size:13px;color:var(--muted)}
+#tx{min-height:90px;max-height:46vh;overflow-y:auto;display:grid;gap:6px;align-content:start}
+#tx p{margin:0;overflow-wrap:anywhere}
+#tx .ts{color:var(--muted);font-size:12px;margin-right:6px;font-variant-numeric:tabular-nums}
+#tx .empty{color:var(--muted)}
+a{color:var(--brand)}
+</style>
+</head>
+<body>
+<main>
+  <h1>MINIT RECORDER</h1>
+
+  <details id="setup" class="card">
+    <summary>ตั้งค่า (ทำครั้งเดียวต่อเครื่อง)</summary>
+    <div style="display:grid;gap:10px">
+      <label>URL ของเว็บแอป Apps Script (ลงท้ายด้วย /exec)<input id="url" type="text" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <label>รหัส TOKEN ที่ตั้งไว้ใน Script properties<input id="token" type="password" autocomplete="off"></label>
+      <div class="row"><button class="primary" id="save">บันทึก</button><button id="test">ทดสอบการเชื่อมต่อ</button></div>
+      <div id="setmsg" class="msg" role="status"></div>
+    </div>
+  </details>
+
+  <section class="card">
+    <label>ชื่อการประชุม<input id="title" type="text" autocomplete="off" placeholder="เช่น ประชุมทีม PI ประจำวัน"></label>
+    <button id="rec" aria-label="เริ่มอัดเสียง">เริ่มอัด</button>
+    <div id="timer">00:00</div>
+    <div class="meter" aria-hidden="true"><i id="lvl"></i></div>
+    <div id="stats"></div>
+    <div id="msg" class="msg" role="status"></div>
+    <p class="note">ระหว่างอัด ให้เปิดหน้าจอค้างไว้ ห้ามล็อกเครื่องหรือสลับแอป เพราะมือถือจะหยุดอัด วางเครื่องใกล้คนพูด</p>
+  </section>
+
+  <section class="card">
+    <div class="row"><h2 style="flex:1">ข้อความที่ถอดได้</h2><button id="copy">คัดลอกทั้งหมด</button></div>
+    <div id="tx"><span class="empty">ข้อความจะขึ้นที่นี่ทุกประมาณ 30 วินาที</span></div>
+    <div id="retry" class="row" hidden><span class="note">มีบางชิ้นส่งไม่สำเร็จ</span><button id="retryBtn">ส่งอีกครั้ง</button></div>
+  </section>
+
+  <section id="done" class="card" hidden>
+    <h2>เสร็จแล้ว</h2>
+    <div class="row"><a id="docLink" target="_blank" rel="noopener">เปิด Google Doc ของการประชุมนี้</a></div>
+    <div class="row"><a id="folderLink" target="_blank" rel="noopener">เปิดโฟลเดอร์ไฟล์เสียง</a></div>
+    <p class="note">ไปที่ MINIT แล้วกด “ดึง transcript จาก Drive” เพื่อสรุปและทำรายงานต่อ</p>
+  </section>
+</main>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var CHUNK_MS=30000;      // ความยาวเสียงต่อชิ้น
+var SILENT=0.006;        // เสียงเบากว่านี้ทั้งชิ้น = ไม่ส่งไปถอด (ยังเก็บไฟล์เสียงไว้)
+var MAX_TRIES=6;
+
+var cfg={url:'',token:''};
+try{cfg.url=localStorage.getItem('minit_url')||'';cfg.token=localStorage.getItem('minit_token')||''}catch(e){}
+$('#url').value=cfg.url;$('#token').value=cfg.token;
+if(!cfg.url||!cfg.token)$('#setup').open=true;
+
+function say(el,t,cls){el.textContent=t;el.className='msg'+(cls?' '+cls:'')}
+function fmt(s){s=Math.max(0,Math.floor(s));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=function(n){return String(n).padStart(2,'0')};return (h?h+':':'')+p(m)+':'+p(x)}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+
+async function api(body){
+  var res=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:cfg.token},body))});
+  return res.json();
+}
+
+/* ---------- ตั้งค่า ---------- */
+$('#save').onclick=function(){
+  cfg.url=$('#url').value.trim();cfg.token=$('#token').value.trim();
+  try{localStorage.setItem('minit_url',cfg.url);localStorage.setItem('minit_token',cfg.token)}catch(e){}
+  say($('#setmsg'),'บันทึกแล้ว','ok');
+};
+$('#test').onclick=async function(){
+  cfg.url=$('#url').value.trim();cfg.token=$('#token').value.trim();
+  say($('#setmsg'),'กำลังทดสอบ…');
+  try{
+    var j=await api({action:'ping'});
+    if(j.ok)say($('#setmsg'),'เชื่อมต่อสำเร็จ','ok');
+    else say($('#setmsg'),j.error==='bad_token'?'URL ถูก แต่รหัส TOKEN ไม่ตรงกับที่ตั้งไว้':'ไม่สำเร็จ: '+j.error,'bad');
+  }catch(e){say($('#setmsg'),'ติดต่อไม่ได้ ตรวจ URL (ต้องลงท้าย /exec) และตั้งการเข้าถึงเป็น Anyone','bad')}
+};
+
+/* ---------- สถานะการอัด ---------- */
+var recording=false,stream=null,ctx=null,analyser=null,mime='',cur=null,segTimer=null,tickTimer=null,meterTimer=null;
+var startedAt=0,seq=1,session=null,wake=null;
+var queue=[],failed=[],sent=0,busy=false,fatal=false,lines=[],lastText='';
+
+function elapsed(){return (Date.now()-startedAt)/1000}
+function stats(){
+  var t=recording?'กำลังอัด · ':'';
+  $('#stats').textContent=t+'ส่งแล้ว '+sent+' ชิ้น · รอส่ง '+queue.length+' · ไม่สำเร็จ '+failed.length;
+  $('#retry').hidden=!failed.length;
+}
+function addText(offset,text){
+  var box=$('#tx');
+  if(box.querySelector('.empty'))box.innerHTML='';
+  var p=document.createElement('p'),ts=document.createElement('span');
+  ts.className='ts';ts.textContent='['+fmt(offset)+']';
+  p.appendChild(ts);p.appendChild(document.createTextNode(text));
+  box.appendChild(p);box.scrollTop=box.scrollHeight;
+  lines.push('['+fmt(offset)+'] '+text);
+  lastText=(lastText+' '+text).slice(-120);
+}
+
+/* ---------- ส่งเสียงทีละชิ้น ---------- */
+function blobToB64(blob){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){res(String(fr.result).split(',')[1]||'')};
+    fr.onerror=function(){rej(fr.error)};
+    fr.readAsDataURL(blob);
+  });
+}
+async function sendChunk(it){
+  var b64=await blobToB64(it.blob);
+  var j=await api({action:'chunk',folderId:session.folderId,docId:session.docId,seq:it.seq,offsetSec:it.offset,
+    mime:it.blob.type,audio:b64,transcribe:!it.silent,prompt:lastText.length>10?lastText:'บันทึกการประชุมภาษาไทย'});
+  if(!j.ok){
+    if(String(j.error).indexOf('bad_token')>=0){var e=new Error('bad_token');e.fatal=true;throw e}
+    throw new Error(j.error||'error');
+  }
+  return j.text||'';
+}
+function enqueue(it){queue.push(it);stats();pump()}
+async function pump(){
+  if(busy)return;busy=true;
+  while(queue.length&&!fatal){
+    var it=queue[0];
+    try{
+      var text=await sendChunk(it);
+      queue.shift();sent++;
+      if(text)addText(it.offset,text);
+    }catch(e){
+      if(e&&e.fatal){fatal=true;say($('#msg'),'รหัส TOKEN ไม่ตรง ไปตรวจในส่วนตั้งค่า','bad');break}
+      it.tries=(it.tries||0)+1;
+      if(it.tries>=MAX_TRIES){queue.shift();failed.push(it);say($('#msg'),'ชิ้นที่ '+it.seq+' ส่งไม่สำเร็จ ('+(e&&e.message||'error')+') ไฟล์ยังอยู่ในหน้านี้ กด “ส่งอีกครั้ง” ได้','bad')}
+      else await sleep(Math.min(30000,2000*Math.pow(2,it.tries)));
+    }
+    stats();
+  }
+  busy=false;stats();
+  if(!recording&&!queue.length&&!fatal)allDone();
+}
+function allDone(){
+  if(!session)return;
+  say($('#msg'),failed.length?'อัดเสร็จ แต่มีบางชิ้นยังไม่ได้ส่ง':'เสร็จแล้ว ข้อความอยู่ใน Google Doc','ok');
+  $('#docLink').href=session.docUrl;$('#folderLink').href=session.folderUrl;$('#done').hidden=false;
+}
+$('#retryBtn').onclick=function(){
+  failed.forEach(function(it){it.tries=0;queue.push(it)});failed=[];
+  queue.sort(function(a,b){return a.seq-b.seq});
+  say($('#msg'),'กำลังส่งอีกครั้ง…');pump();
+};
+
+/* ---------- อัดเสียงเป็นชิ้น ๆ ---------- */
+function pickMime(){
+  var c=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'];
+  for(var i=0;i<c.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(c[i]))return c[i]}
+  return '';
+}
+function newSegment(){
+  var r=new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:32000});
+  var seg={r:r,parts:[],offset:elapsed(),max:0,seq:seq++};
+  r.ondataavailable=function(e){if(e.data&&e.data.size)seg.parts.push(e.data)};
+  r.onstop=function(){
+    var blob=new Blob(seg.parts,{type:mime.split(';')[0]});
+    if(blob.size>0)enqueue({seq:seg.seq,blob:blob,offset:seg.offset,silent:seg.max<SILENT});
+  };
+  r.start();
+  return seg;
+}
+function cycle(){
+  if(!recording)return;
+  var old=cur;cur=newSegment();
+  if(old&&old.r.state==='recording')old.r.stop();
+  segTimer=setTimeout(cycle,CHUNK_MS);
+}
+async function start(){
+  if(!cfg.url||!cfg.token){$('#setup').open=true;say($('#msg'),'ตั้งค่า URL และ TOKEN ก่อน','bad');return}
+  if(!navigator.mediaDevices||!window.MediaRecorder){say($('#msg'),'เบราว์เซอร์นี้อัดเสียงไม่ได้ ลองใช้ Chrome หรือ Safari รุ่นใหม่','bad');return}
+  mime=pickMime();
+  $('#rec').disabled=true;say($('#msg'),'กำลังเตรียม…');
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:true}});
+  }catch(e){$('#rec').disabled=false;say($('#msg'),'ใช้ไมค์ไม่ได้ ให้กดอนุญาตไมโครโฟนให้หน้านี้ แล้วลองใหม่','bad');return}
+  try{
+    var j=await api({action:'start',title:$('#title').value.trim()||'การประชุม'});
+    if(!j.ok)throw new Error(j.error==='bad_token'?'รหัส TOKEN ไม่ตรง':j.error);
+    session=j;
+  }catch(e){
+    stream.getTracks().forEach(function(t){t.stop()});stream=null;
+    $('#rec').disabled=false;say($('#msg'),'เริ่มไม่ได้: '+(e&&e.message||'ติดต่อหลังบ้านไม่ได้'),'bad');return;
+  }
+  // รีเซ็ตค่า
+  queue=[];failed=[];sent=0;fatal=false;lines=[];lastText='';seq=1;
+  $('#tx').innerHTML='<span class="empty">ข้อความจะขึ้นที่นี่ทุกประมาณ 30 วินาที</span>';$('#done').hidden=true;
+  // ตัววัดระดับเสียง
+  try{
+    ctx=new (window.AudioContext||window.webkitAudioContext)();ctx.resume&&ctx.resume();
+    analyser=ctx.createAnalyser();analyser.fftSize=1024;ctx.createMediaStreamSource(stream).connect(analyser);
+    var buf=new Uint8Array(analyser.fftSize);
+    meterTimer=setInterval(function(){
+      analyser.getByteTimeDomainData(buf);var s=0;
+      for(var i=0;i<buf.length;i++){var v=(buf[i]-128)/128;s+=v*v}
+      var rms=Math.sqrt(s/buf.length);
+      if(cur&&rms>cur.max)cur.max=rms;
+      $('#lvl').style.width=Math.min(100,rms*400)+'%';
+    },100);
+  }catch(e){}
+  recording=true;startedAt=Date.now();
+  cur=newSegment();segTimer=setTimeout(cycle,CHUNK_MS);
+  tickTimer=setInterval(function(){$('#timer').textContent=fmt(elapsed())},500);
+  try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(e){}
+  $('#rec').textContent='หยุด';$('#rec').classList.add('on');$('#rec').setAttribute('aria-label','หยุดอัดเสียง');$('#rec').disabled=false;
+  say($('#msg'),'กำลังอัด ข้อความจะขึ้นทุกประมาณ 30 วินาที','ok');stats();
+}
+function stop(){
+  recording=false;
+  clearTimeout(segTimer);clearInterval(tickTimer);clearInterval(meterTimer);
+  if(cur&&cur.r.state==='recording')cur.r.stop();
+  if(stream)stream.getTracks().forEach(function(t){t.stop()});
+  stream=null;
+  try{ctx&&ctx.close()}catch(e){}
+  try{wake&&wake.release()}catch(e){}wake=null;
+  $('#lvl').style.width='0';
+  $('#rec').textContent='เริ่มอัด';$('#rec').classList.remove('on');$('#rec').setAttribute('aria-label','เริ่มอัดเสียง');
+  say($('#msg'),'หยุดแล้ว กำลังส่งชิ้นสุดท้าย…');stats();
+  setTimeout(function(){if(!busy&&!queue.length)allDone();else pump()},600);
+}
+$('#rec').onclick=function(){recording?stop():start()};
+$('#copy').onclick=async function(){
+  var t=lines.join('\n');if(!t){say($('#msg'),'ยังไม่มีข้อความให้คัดลอก');return}
+  try{await navigator.clipboard.writeText(t);say($('#msg'),'คัดลอกแล้ว','ok')}catch(e){say($('#msg'),'คัดลอกไม่ได้ ให้เปิด Google Doc แล้วคัดลอกจากที่นั่น','bad')}
+};
+document.addEventListener('visibilitychange',async function(){
+  if(recording&&document.visibilityState==='visible'&&navigator.wakeLock){try{wake=await navigator.wakeLock.request('screen')}catch(e){}}
+});
+window.addEventListener('beforeunload',function(e){if(recording||queue.length){e.preventDefault();e.returnValue=''}});
+stats();
+})();
+</script>
+</body>
+</html>
