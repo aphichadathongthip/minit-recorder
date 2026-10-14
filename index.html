@@ -1,32 +1,175 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="th">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2775.1">
-  <style type="text/css">
-    body {background-color: #f0f4f9}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 15.0px Tahoma; color: #15183f; -webkit-text-stroke: #15183f}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 40.0px Tahoma; color: #15183f; -webkit-text-stroke: #15183f}
-    p.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Tahoma; color: #15183f; -webkit-text-stroke: #15183f; background-color: #1c693c; min-height: 18.0px}
-    p.p5 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 17.0px Tahoma; color: #ffffff; -webkit-text-stroke: #ffffff; background-color: #0c476f}
-    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 13.0px Tahoma; color: #485173; -webkit-text-stroke: #485173; min-height: 16.0px}
-    p.p7 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px Tahoma; color: #485173; -webkit-text-stroke: #485173; min-height: 16.0px}
-    p.p8 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 12.0px Tahoma; color: #485173; -webkit-text-stroke: #485173}
-    span.s1 {font-kerning: none}
-    span.s2 {font-kerning: none; background-color: #ffffff}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MINIT - หน้าต่างอัดเสียง</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#F3F6FA;--card:#fff;--ink:#1B2250;--muted:#5A6586;--line:#D9E1EB;--brand:#065A82;--ok:#1F7A4D;--bad:#B3402F;--rec:#C62828}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1430;--card:#161E44;--ink:#E8ECF8;--muted:#9AA6C8;--line:#2A3566;--brand:#5BB4DE;--ok:#5CC28B;--bad:#F08A78;--rec:#EF5350;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Prompt',Tahoma,sans-serif;padding:16px}
+main{max-width:420px;margin:0 auto;display:grid;gap:14px}
+h1{font-size:18px;margin:0;letter-spacing:.1em;color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;justify-items:center;min-width:0}
+#title{font-weight:500;text-align:center;overflow-wrap:anywhere}
+#timer{font-size:40px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+#rec{width:100%;min-height:56px;font:inherit;font-size:17px;font-weight:600;border-radius:10px;border:0;background:var(--brand);color:#fff;cursor:pointer}
+#rec.on{background:var(--rec)}
+#rec:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.meter{width:100%;height:10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .08s}
+#msg{font-size:13px;min-height:1.5em;text-align:center;color:var(--muted)}
+#msg.ok{color:var(--ok)}#msg.bad{color:var(--bad)}
+#stats{font-size:13px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin:0;text-align:center}
+</style>
 </head>
 <body>
-<h1 style="margin: 0.0px 0.0px 0.0px 0.0px; font: 18.0px Tahoma; color: #0c476f; -webkit-text-stroke: #0c476f"><span class="s1"><b>MINIT · อัดเสียง</b></span></h1>
-<p class="p2"><span class="s2">กำลังเชื่อมต่อกับหน้าหลัก…</span></p>
-<p class="p3"><span class="s2">00:00</span></p>
-<p class="p4"><span class="s1"></span><br></p>
-<p class="p5"><span class="s1"><b>เริ่มอัด</b></span></p>
-<p class="p6"><span class="s1"></span><br></p>
-<p class="p7"><span class="s1"></span><br></p>
-<p class="p8"><span class="s2">อย่าปิดหรือย่อหน้าต่างนี้ระหว่างอัด · เปิดหน้า MINIT Recorder ค้างไว้อีกหน้าต่างหนึ่ง</span></p>
+<main>
+  <h1>MINIT · อัดเสียง</h1>
+  <section class="card">
+    <div id="title">กำลังเชื่อมต่อกับหน้าหลัก…</div>
+    <div id="timer" aria-live="off">00:00</div>
+    <div class="meter" aria-hidden="true"><i id="lvl"></i></div>
+    <button id="rec" disabled>เริ่มอัด</button>
+    <div id="msg" role="status"></div>
+    <div id="stats"></div>
+    <p class="note">อย่าปิดหรือย่อหน้าต่างนี้ระหว่างอัด · เปิดหน้า MINIT Recorder ค้างไว้อีกหน้าต่างหนึ่ง</p>
+  </section>
+</main>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var CHUNK_MS=30000, SILENT=0.006;
+var host=window.opener, parentOrigin=null, readyTimer=null;
+var stream=null,ctx=null,analyser=null,wake=null,seg=null,cycleTimer=null,meterTimer=null,tickTimer=null;
+var recording=false,t0=0,seq=0,offsetStart=0,pending=0,failed=0,acked=0;
+
+function say(t,cls){var m=$('#msg');m.textContent=t;m.className=cls||''}
+function p2(n){return String(n).padStart(2,'0')}
+function fmt(s){s=Math.floor(s);var h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+':':'')+p2(m)+':'+p2(s%60)}
+function stats(){$('#stats').textContent=recording||seq?('ส่งแล้ว '+seq+' ชิ้น · รอยืนยัน '+pending+(failed?' · ไม่สำเร็จ '+failed:'')):''}
+function post(msg){if(host&&parentOrigin&&!host.closed)host.postMessage(msg,parentOrigin)}
+function okOrigin(o){return o==='https://script.google.com'||/^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(o)}
+
+/* ---------- จับคู่กับหน้าหลัก ---------- */
+if(!host){
+  $('#title').textContent='เปิดหน้านี้ไม่ถูกวิธี';
+  say('ให้เปิดจากปุ่ม “เปิดหน้าต่างอัดเสียง” ในหน้า MINIT Recorder เท่านั้น','bad');
+}else{
+  var announce=function(){try{host.postMessage({type:'ready'},'*')}catch(e){}};
+  announce();readyTimer=setInterval(announce,1500);
+  window.addEventListener('message',function(e){
+    if(e.source!==host||!okOrigin(e.origin))return;
+    var m=e.data||{};
+    if(m.type==='hello'){
+      parentOrigin=e.origin;clearInterval(readyTimer);
+      seq=(m.seqStart||1)-1;offsetStart=m.offsetStart||0;
+      $('#title').textContent=m.title||'การประชุม';
+      if(!recording){$('#rec').disabled=false;say('พร้อม กด “เริ่มอัด”')}
+    }else if(e.origin===parentOrigin){
+      if(m.type==='ack'){pending=Math.max(0,pending-1);if(m.ok)acked++;else failed++;stats()}
+      else if(m.type==='error')say(m.text||'เกิดข้อผิดพลาด','bad');
+    }
+  });
+  setInterval(function(){if(host.closed){say('หน้าหลักถูกปิดไปแล้ว ข้อมูลจะส่งต่อไม่ได้','bad')}},3000);
+}
+
+/* ---------- อัดเสียง ---------- */
+function pickMime(){
+  var c=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+  for(var i=0;i<c.length;i++)if(window.MediaRecorder&&MediaRecorder.isTypeSupported(c[i]))return c[i];
+  return '';
+}
+var MIME=pickMime();
+
+function newSegment(){
+  var s={chunks:[],start:offsetStart+(performance.now()-t0)/1000,peak:0,done:null};
+  var rec=new MediaRecorder(stream,MIME?{mimeType:MIME,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});
+  s.rec=rec;
+  rec.ondataavailable=function(e){if(e.data&&e.data.size)s.chunks.push(e.data)};
+  rec.onstop=function(){
+    var p=finish(s);
+    if(s.done)p.then(s.done);
+  };
+  rec.start();
+  return s;
+}
+function finish(s){
+  var blob=new Blob(s.chunks,{type:s.rec.mimeType||MIME||'audio/webm'});
+  if(blob.size<800)return Promise.resolve();
+  var n=++seq,silent=s.peak<SILENT,mime=blob.type;
+  return new Promise(function(res){
+    var fr=new FileReader();
+    fr.onload=function(){
+      var d=String(fr.result);
+      post({type:'chunk',seq:n,offset:Math.floor(s.start),mime:mime,silent:silent,audio:d.slice(d.indexOf(',')+1)});
+      pending++;stats();res();
+    };
+    fr.onerror=function(){failed++;stats();res()};
+    fr.readAsDataURL(blob);
+  });
+}
+function cycle(){
+  if(!recording||!seg)return;
+  var old=seg;seg=newSegment();old.rec.stop();
+}
+
+async function getWake(){try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',function(){if(recording&&document.visibilityState==='visible')getWake()});
+
+async function start(){
+  if(!window.MediaRecorder){say('เบราว์เซอร์นี้อัดเสียงไม่ได้ ให้ใช้ Chrome','bad');return}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(e){
+    say('เปิดไมโครโฟนไม่ได้: กดอนุญาตไมค์ที่ไอคอนกุญแจข้างแถบที่อยู่ แล้วลองใหม่','bad');return;
+  }
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  analyser=ctx.createAnalyser();analyser.fftSize=1024;
+  ctx.createMediaStreamSource(stream).connect(analyser);
+  var buf=new Float32Array(analyser.fftSize);
+  t0=performance.now();recording=true;
+  seg=newSegment();
+  cycleTimer=setInterval(cycle,CHUNK_MS);
+  meterTimer=setInterval(function(){
+    analyser.getFloatTimeDomainData(buf);
+    var sum=0;for(var i=0;i<buf.length;i++)sum+=buf[i]*buf[i];
+    var rms=Math.sqrt(sum/buf.length);
+    if(seg&&rms>seg.peak)seg.peak=rms;
+    $('#lvl').style.width=Math.min(100,rms*600)+'%';
+  },100);
+  tickTimer=setInterval(function(){$('#timer').textContent=fmt((performance.now()-t0)/1000)},500);
+  stream.getAudioTracks()[0].onended=function(){if(recording){say('ไมโครโฟนหลุด กำลังหยุดอัด','bad');stop()}};
+  getWake();
+  $('#rec').textContent='หยุดอัด';$('#rec').classList.add('on');
+  say('กำลังอัด…','ok');stats();
+}
+
+function stop(){
+  if(!recording)return;
+  recording=false;
+  clearInterval(cycleTimer);clearInterval(meterTimer);clearInterval(tickTimer);
+  var last=seg;seg=null;
+  var end=offsetStart+(performance.now()-t0)/1000;
+  last.done=function(){post({type:'stopped',endOffset:end});offsetStart=end};
+  last.rec.stop();
+  stream.getTracks().forEach(function(t){t.stop()});
+  try{ctx.close()}catch(e){}
+  try{if(wake)wake.release()}catch(e){}
+  $('#lvl').style.width='0';
+  $('#rec').textContent='เริ่มอัดต่อ';$('#rec').classList.remove('on');
+  say('หยุดอัดแล้ว รอส่งชิ้นสุดท้าย แล้วดูผลที่หน้าหลัก');
+}
+
+$('#rec').onclick=function(){recording?stop():start()};
+window.addEventListener('beforeunload',function(e){if(recording){e.preventDefault();e.returnValue=''}});
+})();
+</script>
 </body>
 </html>
